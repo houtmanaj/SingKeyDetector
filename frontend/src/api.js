@@ -1,9 +1,10 @@
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8001'
 
-// Kick the backend awake as soon as the page loads.
-// Render free tier sleeps after inactivity; this gives it a ~20s head-start
-// so it's ready by the time the user clicks the mic button.
-fetch(`${BASE}/health`).catch(() => {})
+// Kick the backend awake as soon as the module loads and expose a promise so the
+// UI can show a "warming up" state instead of silently failing on cold start.
+export const serverReady = fetch(`${BASE}/health`)
+  .then(r => r.ok)
+  .catch(() => false)
 
 export const api = {
   async detectKey(wavBlob, signal) {

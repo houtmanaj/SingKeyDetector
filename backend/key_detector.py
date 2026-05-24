@@ -27,9 +27,9 @@ SCALE_INTERVALS = {
 
 
 def detect_key(y: np.ndarray, sr: int) -> tuple[str, str, float]:
-    # chroma_cqt gives good pitch resolution without the CPU cost of HPSS + chroma_cens,
-    # which is too slow on Render's free-tier shared CPU.
-    chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
+    # chroma_stft uses a plain FFT spectrogram — far faster than chroma_cqt (CQT) on
+    # limited hardware while still giving accurate chroma for key detection.
+    chroma = librosa.feature.chroma_stft(y=y, sr=sr)
     mean_chroma = np.mean(chroma, axis=1)
 
     # Silent or uniform audio produces zero-variance chroma; corrcoef would return NaN

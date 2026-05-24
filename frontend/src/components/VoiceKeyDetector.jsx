@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api } from '../api'
+import { api, serverReady } from '../api'
 
 const MAX_SECONDS = 30      // long enough for Render free-tier cold start (~20-25s)
 const POLL_MS = 1500        // how often to check while recording
@@ -56,6 +56,11 @@ export function VoiceKeyDetector() {
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [warming, setWarming] = useState(true)
+
+  useEffect(() => {
+    serverReady.then(() => setWarming(false))
+  }, [])
 
   const recRef = useRef(null)
 
@@ -229,12 +234,19 @@ export function VoiceKeyDetector() {
           <>
             <button
               onClick={startRecording}
-              className="w-[5rem] h-[5rem] rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center mx-auto mb-5 transition-all active:scale-95 hover:ring-2 hover:ring-zinc-600"
+              disabled={warming}
+              className="w-[5rem] h-[5rem] rounded-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center mx-auto mb-5 transition-all active:scale-95 hover:ring-2 hover:ring-zinc-600"
             >
-              <MicIcon className="w-8 h-8 text-zinc-300" />
+              {warming
+                ? <div className="w-6 h-6 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+                : <MicIcon className="w-8 h-8 text-zinc-300" />}
             </button>
-            <p className="text-base font-semibold text-zinc-200 mb-1">Tap to start singing</p>
-            <p className="text-xs text-zinc-600">Sing, hum, or whistle · mic required</p>
+            <p className="text-base font-semibold text-zinc-200 mb-1">
+              {warming ? 'Server warming up…' : 'Tap to start singing'}
+            </p>
+            <p className="text-xs text-zinc-600">
+              {warming ? 'This takes ~20s on first load' : 'Sing, hum, or whistle · mic required'}
+            </p>
           </>
         )}
 
