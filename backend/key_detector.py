@@ -27,12 +27,9 @@ SCALE_INTERVALS = {
 
 
 def detect_key(y: np.ndarray, sr: int) -> tuple[str, str, float]:
-    # Isolate pitched content — removes drums/transients that add spurious chroma energy
-    y_harmonic, _ = librosa.effects.hpss(y)
-
-    # chroma_cens: L2-normalised + smoothed per frame, more robust than chroma_cqt
-    # when there is timbre variation, reverb, or microphone noise
-    chroma = librosa.feature.chroma_cens(y=y_harmonic, sr=sr)
+    # chroma_cqt gives good pitch resolution without the CPU cost of HPSS + chroma_cens,
+    # which is too slow on Render's free-tier shared CPU.
+    chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
     mean_chroma = np.mean(chroma, axis=1)
 
     # Silent or uniform audio produces zero-variance chroma; corrcoef would return NaN
@@ -59,7 +56,9 @@ def get_scale_notes(key: str, mode: str) -> list[str]:
 
 
 def detect_key_from_file(file_path: str) -> dict:
-    y, sr = librosa.load(file_path, mono=True, duration=30)
+    # sr=11025 halves processing time vs the default 22050 Hz;
+    # chroma features only need pitch content, not high-frequency detail.
+    y, sr = librosa.load(file_path, mono=True, duration=30, sr=11025)
     key, mode, corr = detect_key(y, sr)
     scale = get_scale_notes(key, mode)
     # Clamp to [0, 1] to guard against NaN/inf reaching JSON serialization

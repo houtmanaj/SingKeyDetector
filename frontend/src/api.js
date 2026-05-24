@@ -1,5 +1,10 @@
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8001'
 
+// Kick the backend awake as soon as the page loads.
+// Render free tier sleeps after inactivity; this gives it a ~20s head-start
+// so it's ready by the time the user clicks the mic button.
+fetch(`${BASE}/health`).catch(() => {})
+
 export const api = {
   async detectKey(wavBlob, signal) {
     const form = new FormData()

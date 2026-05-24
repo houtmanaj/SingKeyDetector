@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 
-const MAX_SECONDS = 15      // hard fallback
+const MAX_SECONDS = 30      // long enough for Render free-tier cold start (~20-25s)
 const POLL_MS = 1500        // how often to check while recording
 const WINDOW_SECS = 4.0     // seconds of audio sent each poll
 const HIGH_CONFIDENCE = 0.85 // accept on first poll if confidence is this high
@@ -107,8 +107,12 @@ export function VoiceKeyDetector() {
       setResult(data)
       setPhase('result')
     } catch (e) {
+      const msg = e?.message || ''
+      const isNetwork = /load failed|failed to fetch|networkerror/i.test(msg)
       setPhase('error')
-      setErrorMsg(e.message || 'Key detection failed. Is the backend running?')
+      setErrorMsg(isNetwork
+        ? 'Could not reach the server — it may be starting up. Wait a moment and try again.'
+        : msg || 'Key detection failed.')
     }
   }, [teardown])
 
